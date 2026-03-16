@@ -7,6 +7,8 @@ import {
   isAgencyValid,
   castForSave,
   diffAgencies,
+  normalizeCompletionDate,
+  normalizePhoneNumber,
 } from "../utils/utils";
 
 export default function AgencyDetailsModal() {
@@ -21,8 +23,21 @@ export default function AgencyDetailsModal() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        setAgencies(parsed);
-        setInitialAgencies(parsed);
+        const normalized = (Array.isArray(parsed) ? parsed : []).map((a) => ({
+          ...newAgency(),
+          ...a,
+          completionDate: normalizeCompletionDate(a?.completionDate),
+          pocs:
+            Array.isArray(a?.pocs) && a.pocs.length > 0
+              ? a.pocs.map((p) => ({
+                  ...newAgency().pocs[0],
+                  ...p,
+                  phoneNumber: normalizePhoneNumber(p?.phoneNumber),
+                }))
+              : [newAgency().pocs[0]],
+        }));
+        setAgencies(normalized);
+        setInitialAgencies(normalized);
       } catch {
         setInitialAgencies([]);
       }
@@ -87,15 +102,9 @@ export default function AgencyDetailsModal() {
       agenciesToRemove,
     };
 
-    const merged = [
-      ...agenciesToAdd,
-      ...agenciesToUpdate,
-      ...(initialAgencies || []).filter(
-        (a) => !agenciesToRemove.includes(a.id) && !agenciesToUpdate.find((u) => u.id === a.id),
-      ),
-    ];
-
-    window.localStorage.setItem("agencyManagementData", JSON.stringify(merged));
+    // Persist in the same order as the current UI/tabs.
+    const orderedToSave = agencies.map(castForSave);
+    window.localStorage.setItem("agencyManagementData", JSON.stringify(orderedToSave));
     console.log("Saving payload:", payload);
     setInitialAgencies(agencies);
     alert("Saved! Check the console for the final shaped data.");

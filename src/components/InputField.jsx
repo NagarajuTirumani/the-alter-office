@@ -1,4 +1,5 @@
 import FieldError from "./FieldError";
+import { useRef } from "react";
 
 export default function InputField({
   label,
@@ -9,6 +10,17 @@ export default function InputField({
   error,
   type,
 }) {
+  const inputRef = useRef(null);
+  const inputType = type || "text";
+
+  function openNativePickerIfAvailable() {
+    const el = inputRef.current;
+    if (!el) return;
+    if (typeof el.showPicker === "function") {
+      el.showPicker();
+    }
+  }
+
   return (
     <div style={{ marginBottom: 16 }}>
       {label && (
@@ -17,9 +29,15 @@ export default function InputField({
         </label>
       )}
       <input
-        type={type || "text"}
+        ref={inputRef}
+        type={inputType}
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
+        onClick={() => {
+          if (inputType === "month" || inputType === "date" || inputType === "time") {
+            openNativePickerIfAvailable();
+          }
+        }}
         placeholder={placeholder}
         style={{
           width: "100%",

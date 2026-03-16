@@ -22,12 +22,32 @@ export function newAgency() {
   };
 }
 
+export function normalizeCompletionDate(value) {
+  if (!value) return "";
+  if (typeof value === "string" && /^\d{4}-\d{2}$/.test(value)) return value;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+
+  const yyyy = String(d.getFullYear());
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${yyyy}-${mm}`;
+}
+
+export function normalizePhoneNumber(value) {
+  if (typeof value === "number" && value === 0) return "";
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const digits = raw.replace(/[^\d]/g, "");
+  if (digits === "0") return "";
+  return digits;
+}
+
 export function castForSave(agency) {
   return {
     id: agency.id,
     agencyName: agency.agencyName,
     agencyType: agency.agencyType,
-    completionDate: agency.completionDate ? new Date(agency.completionDate) : null,
+    completionDate: normalizeCompletionDate(agency.completionDate) || null,
     notes: agency.notes,
     pocs: agency.pocs.map((poc) => ({
       id: poc.id,
@@ -35,7 +55,7 @@ export function castForSave(agency) {
       name: poc.name,
       email: poc.email || undefined,
       countryCode: poc.countryCode || undefined,
-      phoneNumber: poc.phoneNumber !== "" ? Number(poc.phoneNumber) : undefined,
+      phoneNumber: normalizePhoneNumber(poc.phoneNumber) || undefined,
     })),
   };
 }
@@ -83,19 +103,15 @@ export function validateAgency(agency) {
     if (poc.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(poc.email)) {
       errors["poc_" + i + "_email"] = "Invalid email format";
     }
-    const rawPhone = (poc.phoneNumber || "").trim();
-    if (rawPhone !== "") {
-      if (isNaN(Number(rawPhone))) {
-        errors["poc_" + i + "_phone"] = "Phone number must be numeric";
-      } else {
-        const len = rawPhone.length;
-        if (poc.countryCode === "+91") {
-          if (len !== 10) {
-            errors["poc_" + i + "_phone"] = "Indian numbers must be 10 digits";
-          }
-        } else if (len < 6 || len > 15) {
-          errors["poc_" + i + "_phone"] = "Phone number must be 6-15 digits";
+    const digitsPhone = normalizePhoneNumber(poc.phoneNumber);
+    if (digitsPhone !== "") {
+      const len = digitsPhone.length;
+      if (poc.countryCode === "+91") {
+        if (len !== 10) {
+          errors["poc_" + i + "_phone"] = "Indian numbers must be 10 digits";
         }
+      } else if (len < 6 || len > 15) {
+        errors["poc_" + i + "_phone"] = "Phone number must be 6-15 digits";
       }
     }
   });
