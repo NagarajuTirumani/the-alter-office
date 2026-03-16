@@ -3,7 +3,7 @@ import TextArea from "./TextArea";
 import POCSection from "./POCSection";
 import { newPOC } from "../utils/utils";
 
-export default function AgencyForm({ agency, onChange, errors }) {
+export default function AgencyForm({ agency, onChange, errors, showPOC, onTogglePOC }) {
   function updateField(field, value) {
     onChange({ ...agency, [field]: value });
   }
@@ -48,6 +48,7 @@ export default function AgencyForm({ agency, onChange, errors }) {
         type="month"
         value={agency.completionDate}
         onChange={(val) => updateField("completionDate", val)}
+        error={errors.completionDate}
       />
 
       <TextArea
@@ -55,6 +56,7 @@ export default function AgencyForm({ agency, onChange, errors }) {
         value={agency.notes}
         onChange={(val) => updateField("notes", val)}
         placeholder="Add any notes..."
+        error={errors.notes}
       />
 
       <hr
@@ -65,17 +67,34 @@ export default function AgencyForm({ agency, onChange, errors }) {
         }}
       />
 
-      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>
-        Agency POC Details
-      </div>
+      <button
+        type="button"
+        onClick={onTogglePOC}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          padding: 0,
+          cursor: "pointer",
+          marginBottom: 8,
+        }}
+      >
+        <span style={{ fontWeight: 700, fontSize: 16 }}>Agency POC Details</span>
+        <span style={{ fontSize: 16 }}>{showPOC ? "▾" : "▸"}</span>
+      </button>
 
-      <POCSection
-        pocs={agency.pocs}
-        onAdd={addPOC}
-        onRemove={removePOC}
-        onChange={updatePOC}
-        errors={errors}
-      />
+      {showPOC && (
+        <POCSection
+          pocs={agency.pocs}
+          onAdd={addPOC}
+          onRemove={removePOC}
+          onChange={updatePOC}
+          errors={errors}
+        />
+      )}
     </div>
   );
 }

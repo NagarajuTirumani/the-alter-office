@@ -1,14 +1,48 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgencyTabs from "./AgencyTabs";
 import AgencyForm from "./AgencyForm";
-import { newAgency, validateAgency, isAgencyValid, castForSave } from "../utils/utils";
+import {
+  newAgency,
+  validateAgency,
+  isAgencyValid,
+  castForSave,
+  diffAgencies,
+} from "../utils/utils";
 
 export default function AgencyDetailsModal() {
   const [agencies, setAgencies] = useState([newAgency()]);
+  const [initialAgencies, setInitialAgencies] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [pocExpanded, setPocExpanded] = useState(true);
+  const [showErrors, setShowErrors] = useState(false);
 
-  const currentErrors = validateAgency(agencies[activeIndex]);
+  useEffect(() => {
+    const saved = window.localStorage.getItem("agencyManagementData");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setAgencies(parsed);
+        setInitialAgencies(parsed);
+      } catch {
+        setInitialAgencies([]);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log("initialAgencies:", initialAgencies);
+  }, [initialAgencies]);
+
+  useEffect(() => {
+    console.log("agencies:", agencies);
+  }, [agencies]);
+
+  const currentErrors = showErrors ? validateAgency(agencies[activeIndex]) : {};
   const allValid = agencies.every(isAgencyValid);
+  const hasChanges =
+    !initialAgencies ||
+    JSON.stringify(agencies.map(castForSave)) !==
+      JSON.stringify((initialAgencies || []).map(castForSave));
 
   function updateAgency(updated) {
     setAgencies((prev) =>
@@ -17,6 +51,13 @@ export default function AgencyDetailsModal() {
   }
 
   function addAgency() {
+    const activeAgency = agencies[activeIndex];
+    if (!isAgencyValid(activeAgency)) {
+      setShowErrors(true);
+      return;
+    }
+    // Active agency is valid, so reset errors for the newly created agency
+    setShowErrors(false);
     const updated = [...agencies, newAgency()];
     setAgencies(updated);
     setActiveIndex(updated.length - 1);
@@ -29,9 +70,31 @@ export default function AgencyDetailsModal() {
   }
 
   function handleSave() {
-    if (!allValid) return;
-    const payload = agencies.map(castForSave);
+    setShowErrors(true);
+    if (!allValid || !hasChanges) return;
+    console.log("initialAgencies:", initialAgencies);
+    const { agenciesToAdd, agenciesToUpdate, agenciesToRemove } = diffAgencies(
+      initialAgencies || [],
+      agencies,
+    );
+
+    const payload = {
+      agenciesToAdd,
+      agenciesToUpdate,
+      agenciesToRemove,
+    };
+
+    const merged = [
+      ...agenciesToAdd,
+      ...agenciesToUpdate,
+      ...(initialAgencies || []).filter(
+        (a) => !agenciesToRemove.includes(a.id) && !agenciesToUpdate.find((u) => u.id === a.id),
+      ),
+    ];
+
+    window.localStorage.setItem("agencyManagementData", JSON.stringify(merged));
     console.log("Saving payload:", payload);
+    setInitialAgencies(agencies);
     alert("Saved! Check the console for the final shaped data.");
   }
 
@@ -39,6 +102,13 @@ export default function AgencyDetailsModal() {
     id: a.id,
     label: "Agency " + (i + 1),
   }));
+
+  const agencyErrorIndexes = showErrors
+    ? agencies
+        .map((a, i) => [i, validateAgency(a)])
+        .filter(([, errs]) => Object.keys(errs).length > 0)
+        .map(([i]) => i)
+    : [];
 
   return (
     <div
@@ -82,12 +152,15 @@ export default function AgencyDetailsModal() {
             onRemove={removeAgency}
             onAdd={addAgency}
             addLabel="+ ADD AGENCY"
+            errorIndexes={agencyErrorIndexes}
           />
 
           <AgencyForm
             agency={agencies[activeIndex]}
             onChange={updateAgency}
             errors={currentErrors}
+            showPOC={pocExpanded}
+            onTogglePOC={() => setPocExpanded((prev) => !prev)}
           />
         </div>
 
@@ -116,15 +189,15 @@ export default function AgencyDetailsModal() {
           </button>
           <button
             onClick={handleSave}
-            disabled={!allValid}
+            disabled={!allValid || !hasChanges}
             style={{
               flex: 1,
               padding: "12px 0",
               borderRadius: 8,
               border: "none",
-              background: allValid ? "#2563eb" : "#aaa",
+              background: allValid && hasChanges ? "#2563eb" : "#aaa",
               color: "#fff",
-              cursor: allValid ? "pointer" : "not-allowed",
+              cursor: allValid && hasChanges ? "pointer" : "not-allowed",
               fontWeight: 600,
               fontSize: 14,
             }}

@@ -1,6 +1,6 @@
 import InputField from "./InputField";
 import FieldError from "./FieldError";
-import { GENDER_OPTIONS, COUNTRY_CODES } from "../utils/constants";
+import { COUNTRY_CODES } from "../utils/constants";
 
 export default function POCForm({ poc, pocIndex, onChange, errors }) {
   function update(field, value) {
@@ -16,17 +16,16 @@ export default function POCForm({ poc, pocIndex, onChange, errors }) {
         </label>
         <div style={{ display: "flex", gap: 8 }}>
           <select
-            value={poc.gender}
+            value={poc.gender || "MALE"}
             onChange={(e) => update("gender", e.target.value)}
             style={{ padding: "10px 8px", border: "1px solid #ccc", borderRadius: 6, fontSize: 14 }}
           >
-            {GENDER_OPTIONS.map((g) => (
-              <option key={g}>{g}</option>
-            ))}
+            <option value="MALE">Mr.</option>
+            <option value="FEMALE">Mrs.</option>
           </select>
           <input
             type="text"
-            value={poc.name}
+            value={poc.name || ""}
             onChange={(e) => update("name", e.target.value)}
             placeholder="Full name"
             style={{
@@ -46,7 +45,7 @@ export default function POCForm({ poc, pocIndex, onChange, errors }) {
       <InputField
         label="POC Email"
         type="email"
-        value={poc.email}
+        value={poc.email || ""}
         onChange={(val) => update("email", val)}
         placeholder="Enter email (optional)"
         error={errors["poc_" + pocIndex + "_email"]}
@@ -59,7 +58,7 @@ export default function POCForm({ poc, pocIndex, onChange, errors }) {
         </label>
         <div style={{ display: "flex", gap: 8 }}>
           <select
-            value={poc.countryCode}
+            value={poc.countryCode || "+91"}
             onChange={(e) => update("countryCode", e.target.value)}
             style={{ padding: "10px 8px", border: "1px solid #ccc", borderRadius: 6, fontSize: 14 }}
           >
@@ -71,7 +70,7 @@ export default function POCForm({ poc, pocIndex, onChange, errors }) {
           </select>
           <input
             type="tel"
-            value={poc.phoneNumber}
+            value={poc.phoneNumber || ""}
             onChange={(e) => update("phoneNumber", e.target.value)}
             placeholder="Phone number"
             style={{

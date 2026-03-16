@@ -18,7 +18,7 @@ export default function InputField({
       )}
       <input
         type={type || "text"}
-        value={value}
+        value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         style={{
