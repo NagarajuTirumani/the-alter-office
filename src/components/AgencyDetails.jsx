@@ -51,12 +51,15 @@ export default function AgencyDetailsModal() {
   }
 
   function addAgency() {
-    const activeAgency = agencies[activeIndex];
-    if (!isAgencyValid(activeAgency)) {
+    // Don't allow adding a new tab if ANY existing agency is incomplete.
+    // This prevents creating multiple empty agencies when user switches tabs.
+    const firstInvalidIndex = agencies.findIndex((a) => !isAgencyValid(a));
+    if (firstInvalidIndex !== -1) {
       setShowErrors(true);
+      setActiveIndex(firstInvalidIndex);
       return;
     }
-    // Active agency is valid, so reset errors for the newly created agency
+
     setShowErrors(false);
     const updated = [...agencies, newAgency()];
     setAgencies(updated);

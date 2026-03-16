@@ -1,13 +1,3 @@
-
-
-export const AGENCY_TYPES = [
-  "AOR",
-  "PERFORMANCE MARKETING",
-  "SOCIAL MEDIA MARKETING",
-  "OTHERS",
-];
-
-
 export const GENDER_OPTIONS = ["Mr.", "Ms.", "Mrs.", "Dr."];
 
 export const COUNTRY_CODES = [

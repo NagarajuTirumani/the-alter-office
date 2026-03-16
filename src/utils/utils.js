@@ -133,7 +133,7 @@ export function diffAgencies(initial, current) {
 
   initial.forEach((agency) => {
     if (!currentById.has(agency.id)) {
-      agenciesToRemove.push(agency.id);
+      agenciesToRemove.push(agency);
     }
   });
 
