@@ -88,6 +88,7 @@ export default function AgencyForm({ agency, onChange, errors, showPOC, onToggle
 
       {showPOC && (
         <POCSection
+          key={agency.id}
           pocs={agency.pocs}
           onAdd={addPOC}
           onRemove={removePOC}
