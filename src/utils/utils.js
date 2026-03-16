@@ -14,6 +14,7 @@ export function newPOC() {
 export function newAgency() {
   return {
     id: uuidv4(),
+    agencyNumber: undefined,
     agencyName: "",
     agencyType: "",
     completionDate: "",
@@ -45,6 +46,7 @@ export function normalizePhoneNumber(value) {
 export function castForSave(agency) {
   return {
     id: agency.id,
+    agencyNumber: agency.agencyNumber,
     agencyName: agency.agencyName,
     agencyType: agency.agencyType,
     completionDate: normalizeCompletionDate(agency.completionDate) || null,

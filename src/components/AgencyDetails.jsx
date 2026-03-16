@@ -12,18 +12,44 @@ import {
 } from "../utils/utils";
 
 export default function AgencyDetailsModal() {
-  const [agencies, setAgencies] = useState([newAgency()]);
+  const [agencies, setAgencies] = useState([{ ...newAgency(), agencyNumber: 1 }]);
   const [initialAgencies, setInitialAgencies] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [pocExpanded, setPocExpanded] = useState(true);
   const [showErrors, setShowErrors] = useState(false);
+
+  function nextAgencyNumber(list) {
+    const nums = (list || [])
+      .map((a) => Number(a?.agencyNumber))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    return (nums.length ? Math.max(...nums) : 0) + 1;
+  }
+
+  function ensureUniqueAgencyNumbers(list) {
+    const used = new Set();
+    let next = 1;
+
+    function takeNext() {
+      while (used.has(next)) next += 1;
+      used.add(next);
+      return next;
+    }
+
+    return (list || []).map((a) => {
+      const n = Number(a?.agencyNumber);
+      const valid = Number.isFinite(n) && n > 0;
+      const keep = valid && !used.has(n);
+      const agencyNumber = keep ? (used.add(n), n) : takeNext();
+      return { ...a, agencyNumber };
+    });
+  }
 
   useEffect(() => {
     const saved = window.localStorage.getItem("agencyManagementData");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        const normalized = (Array.isArray(parsed) ? parsed : []).map((a) => ({
+        const normalizedRaw = (Array.isArray(parsed) ? parsed : []).map((a) => ({
           ...newAgency(),
           ...a,
           completionDate: normalizeCompletionDate(a?.completionDate),
@@ -36,6 +62,7 @@ export default function AgencyDetailsModal() {
                 }))
               : [newAgency().pocs[0]],
         }));
+        const normalized = ensureUniqueAgencyNumbers(normalizedRaw);
         setAgencies(normalized);
         setInitialAgencies(normalized);
       } catch {
@@ -76,7 +103,7 @@ export default function AgencyDetailsModal() {
     }
 
     setShowErrors(false);
-    const updated = [...agencies, newAgency()];
+    const updated = [...agencies, { ...newAgency(), agencyNumber: nextAgencyNumber(agencies) }];
     setAgencies(updated);
     setActiveIndex(updated.length - 1);
   }
@@ -102,17 +129,20 @@ export default function AgencyDetailsModal() {
       agenciesToRemove,
     };
 
+    // Ensure tab titles/numbers stay unique & persistent.
+    const fixed = ensureUniqueAgencyNumbers(agencies);
+    setAgencies(fixed);
     // Persist in the same order as the current UI/tabs.
-    const orderedToSave = agencies.map(castForSave);
+    const orderedToSave = fixed.map(castForSave);
     window.localStorage.setItem("agencyManagementData", JSON.stringify(orderedToSave));
     console.log("Saving payload:", payload);
-    setInitialAgencies(agencies);
+    setInitialAgencies(fixed);
     alert("Saved! Check the console for the final shaped data.");
   }
 
   const agencyTabItems = agencies.map((a, i) => ({
     id: a.id,
-    label: "Agency " + (i + 1),
+    label: "Agency " + (a.agencyNumber ?? i + 1),
   }));
 
   const agencyErrorIndexes = showErrors
